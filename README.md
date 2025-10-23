@@ -1,17 +1,25 @@
-## Esercitazione 1
-Clonare il codice sul proprio IDE e modificare i seguenti file:
+## Esercitazione 4
 
-1. EquazioneSecondoGradoModificabileConRisolutore.java
-2. EquazioneSecondoGradoModificabileConRisolutoreTest.java
-3. EquazioniModificabiliTextualFrontEnd.java
+### Aule, Prenotazioni e Facilities
 
-Nel caso 1 Implementare i metodi della classe come indicato dalle API in formato javadoc. I punti da modificare sono indicati con la stringa "// TODO implementare"
+Scaricare il template del codice dal link allegato. 
+Riutilizzare il codice della Esercitazione N 3 modificando, nella classe 
+Prenotazione, la variabile istanza "aula" cambiando il tipo da String a Aula. 
+Cambiare di conseguenza anche i metodi getAula(), equals(), hashCode() e 
+compareTo(). 
 
-Nel caso 2 scrivere i test JUnit per i metodi indicati, cioè sostituire ogni riga "// TODO "fail("Test non implementato");"  con il codice opportuno per testare il metodo corrispondente della classe EquazioneSecondoGradoModificabileConRisolutore. Si devono testare tutte le funzionalità indicate nelle API pubbliche dei metodi della classe, compreso il lancio delle eccezioni.
+Implementare poi i metodi contrassegnati con "// TODO implementare" nelle classi:
 
-Nel caso 3 fare il debug e modificare il codice in modo che non vada in loop se l'inserimento del parametro a o degli altri parametri richiede almeno una retry.
+- Aula.java
+- Facility.java
+- QuantitativeFacility.java
+- PresenceFacility.java
+- Prenotazione.java
+- TimeSlot.java
 
-Indicare con i commenti /* ... */ o // ... DOVE è stato modificato il file originale e perché.
+I metodi da implementare sono documentati tramite le loro API in javadoc. L'esercitazione verte principalmente sull'ereditarietà (la classe Facility e le sottoclassi) e gli array (nella classe Aula bisogna gestire le facilities e le prenotazioni come array che vanno raddoppiati se non c'è più spazio disponibile). Ci sono diversi test JUnit per i metodi. Per la classe TimeSlot e una parte della classe Prenotazione si può riutilizzare il codice scritto per la ES 3 o riscriverlo migliorandolo.
+
+
 
 ## Consegna
 
