@@ -1,27 +1,69 @@
-## Esercitazione 4
+# Esercitazione 4 – Aule, prenotazioni e servizi
 
-### Aule, Prenotazioni e Facilities
+## Obiettivi didattici
 
-Scaricare il template del codice dal link allegato. 
-Riutilizzare il codice della Esercitazione N 3 modificando, nella classe 
-Prenotazione, la variabile istanza "aula" cambiando il tipo da String a Aula. 
-Cambiare di conseguenza anche i metodi getAula(), equals(), hashCode() e 
-compareTo(). 
+Questa esercitazione consolida i concetti delle lezioni su classi, stato, incapsulamento, uguaglianza, ordinamento ed **ereditarietà**. Introduce inoltre la gestione esplicita di una collezione di riferimenti mediante **array**, prima di passare nella prossima lezione alle interfacce `List<E>` e all'implementazione `ArrayList<E>` del Java Collections Framework.
 
-Implementare poi i metodi contrassegnati con "// TODO implementare" nelle classi:
+Gli obiettivi sono:
 
-- Aula.java
-- Facility.java
-- QuantitativeFacility.java
-- PresenceFacility.java
-- Prenotazione.java
-- TimeSlot.java
+- distinguere **superclasse astratta** e **sottoclassi concrete**, usare `extends`, `super(...)`, overriding e dispatch dinamico;
+- distinguere `Facility.equals` (identità per codice) da `Facility.satisfies` (compatibilità di una richiesta);
+- riutilizzare i contratti di `equals`, `hashCode`, `Comparable` e `compareTo` di `TimeSlot` e `Prenotazione`;
+- preservare l'immutabilità di `TimeSlot` con copie difensive di `GregorianCalendar`;
+- mantenere negli array di `Aula` gli invarianti relativi a **capacità** (`array.length`) e **dimensione logica** (`numFacilities`, `numPrenotazioni`);
+- implementare ricerca lineare, controllo dei duplicati, verifica dei vincoli e **raddoppio della capacità** quando necessario;
+- usare i test JUnit 5 per verificare casi normali, casi limite, eccezioni e sequenze di operazioni.
 
-I metodi da implementare sono documentati tramite le loro API in javadoc. L'esercitazione verte principalmente sull'ereditarietà (la classe Facility e le sottoclassi) e gli array (nella classe Aula bisogna gestire le facilities e le prenotazioni come array che vanno raddoppiati se non c'è più spazio disponibile). Ci sono diversi test JUnit per i metodi. Per la classe TimeSlot e una parte della classe Prenotazione si può riutilizzare il codice scritto per la ES 3 o riscriverlo migliorandolo.
+## Modello e classi
 
+- `Facility`: superclasse astratta; il codice identifica la facility. Il metodo astratto `satisfies(Facility)` è il punto di estensione polimorfico.
+- `PresenceFacility`: soddisfa soltanto una richiesta di presenza con lo stesso codice.
+- `QuantitativeFacility`: soddisfa una richiesta quantitativa con lo stesso codice se la quantità disponibile è almeno quella richiesta.
+- `Aula`: identificata dal nome, contiene un array di facility e uno di prenotazioni, con contatori separati e capacità raddoppiata quando l'array è pieno.
+- `Prenotazione`: identificata da aula e intervallo; docente e motivo non definiscono l'identità e sono modificabili.
+- `TimeSlot`: intervallo temporale con sovrapposizione e tolleranza di 5 minuti interi, già affrontato nell'esercitazione 3.
 
+### Array: capacità e dimensione logica
+
+All'inizio `facilities.length == 5`, ma `numFacilities == 0`. Le posizioni effettivamente occupate sono soltanto quelle con indici da `0` incluso a `numFacilities` escluso. Lo stesso vale per le prenotazioni (capacità iniziale 100). Se un array è pieno, il codice alloca un array doppio, **copia i riferimenti** e sostituisce il riferimento al vecchio array. Non vengono copiati gli oggetti stessi.
+
+Con gli array dobbiamo implementare manualmente controlli di capacità, copia e contatori. Nel passaggio futuro a `ArrayList<E>`, `add`, `size` e la gestione automatica della capacità semplificheranno questa logica. La ricerca dei duplicati e il controllo delle sovrapposizioni continueranno comunque a richiedere un ragionamento sul contratto e sulla complessità.
+
+### Attenzione: getter che espongono gli array
+
+Il contratto originario di `Aula.getFacilities()` e `Aula.getPrenotazioni()` restituisce **l'array interno**, comprese le posizioni non occupate. Questo permette di osservare la capacità, ma espone lo stato a modifiche esterne e costituisce una limitazione intenzionalmente evidenziata dell'API esistente. **Non modificare gli array restituiti**: il loro contenuto deve essere aggiornato tramite i metodi della classe. In una progettazione più robusta useremmo viste non modificabili o copie difensive, evitando di esporre l'array interno.
+
+## Contratti da osservare
+
+- `equals` e `hashCode` devono utilizzare gli stessi dati; `compareTo` deve essere coerente con l'identità logica.
+- `Facility` confronta solo il codice, anche tra sottoclassi differenti; `satisfies` ha invece regole differenti per presenza e quantità.
+- Una prenotazione che supera la tolleranza di sovrapposizione è rifiutata senza modificare il numero di prenotazioni.
+- Per `TimeSlot`, due intervalli a contatto restituiscono `-1` minuti di sovrapposizione; una sovrapposizione positiva inferiore a un minuto restituisce `0`. `overlapsWith` è vero solo se i minuti interi superano strettamente 5.
+- L'API originale non impone una quantità non negativa a `QuantitativeFacility`, né vieta `null` nei setter di `Prenotazione`: non introdurre restrizioni ulteriori senza modificare esplicitamente il contratto.
+
+## Svolgimento
+
+Leggere prima questa traccia e le Javadoc, poi implementare i metodi contrassegnati `TODO` **senza cambiare package, firme, classi o test**. Per `TimeSlot` e parte di `Prenotazione` si può riutilizzare e migliorare il codice dell'esercitazione 3. Procedere per piccoli passi e verificare frequentemente i test.
+
+Il progetto richiede Java 8 e Maven. Dalla radice del progetto:
+
+```bash
+mvn test
+```
+
+I test automatici sono un supporto all'autovalutazione e non sostituiscono la lettura dei contratti delle API. L'eventuale presenza di test ulteriori non è esclusa.
 
 ## Consegna
 
-Si possono fare più commit e push sul proprio repository. Dopo la prima push l'esercitazione viene considerata consegnata.
-L'ultima push viene considerata la versione finale.
+La consegna avviene **esclusivamente nel compito corrispondente su Moodle**, entro la scadenza indicata. Caricare le **sei classi Java** richieste (`Aula.java`, `Facility.java`, `PresenceFacility.java`, `QuantitativeFacility.java`, `Prenotazione.java`, `TimeSlot.java`) con i TODO implementati. Non è necessario consegnare l'intero progetto Maven, i test, `pom.xml` o il README. Commit e push in un repository personale sono facoltativi e **non costituiscono consegna**.
+
+## Documentazione API
+
+Per generare la Javadoc dalla radice del progetto:
+
+```bash
+javadoc -encoding UTF-8 -charset UTF-8 -docencoding UTF-8 -d docs \
+  -sourcepath src/main/java -subpackages it.unicam.cs.asdl2526.es4
+```
+
+Le Javadoc descrivono il contratto pubblico; i commenti ordinari spiegano scelte algoritmiche e invarianti.
