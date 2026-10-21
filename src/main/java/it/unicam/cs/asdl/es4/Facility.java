@@ -21,7 +21,12 @@ public abstract class Facility {
      * @throws NullPointerException se uno dei parametri è null
      */
     public Facility(String codice, String descrizione) {
-        // TODO implementare
+        if (codice == null)
+            throw new NullPointerException(
+                    "Tentativo di costruire una facility senza codice");
+        if (descrizione == null)
+            throw new NullPointerException(
+                    "Tentativo di costruire una facility senza descrizione");
         this.codice = codice;
         this.descrizione = descrizione;
     }
@@ -48,8 +53,9 @@ public abstract class Facility {
      */
     @Override
     public int hashCode() {
-        // TODO implementare
-        return -1;
+        int prime = 31;
+        int result = 1;
+        return result * prime * codice.hashCode();
     }
 
     /**
@@ -61,8 +67,16 @@ public abstract class Facility {
      */
     @Override
     public boolean equals(Object obj) {
-        // TODO implementare
-        return false;
+        if (this == obj){
+            return true;
+        }
+
+        if (!(obj instanceof Facility)){
+            return false;
+        }
+
+        Facility other = (Facility) obj;
+        return this.codice.equals(other.codice);
     }
 
     /**

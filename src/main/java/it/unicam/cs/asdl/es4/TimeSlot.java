@@ -1,5 +1,7 @@
 package it.unicam.cs.asdl.es4;
 
+import java.sql.Time;
+import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 /**
@@ -54,9 +56,23 @@ public class TimeSlot implements Comparable<TimeSlot> {
      *         a {@code stop}
      */
     public TimeSlot(GregorianCalendar start, GregorianCalendar stop) {
-        // TODO implementare
-        this.start = start;
-        this.stop = stop;
+        if (start == null)
+            throw new NullPointerException(
+                    "Tentativo di creare un time slot con inizio nullo");
+        if (stop == null)
+            throw new NullPointerException(
+                    "Tentativo di creare un time slot con fine nulla");
+        if (start.compareTo(stop) >= 0)
+            throw new IllegalArgumentException(
+                    "Tentativo di creare un time slot con inizio maggiore o uguale di fine");
+
+        /*
+         * Copie difensive: GregorianCalendar è mutabile. Se conservassimo i
+         * riferimenti ricevuti, il chiamante potrebbe modificare dall'esterno
+         * lo stato di un TimeSlot già costruito.
+         */
+        this.start = (GregorianCalendar) start.clone();
+        this.stop = (GregorianCalendar) stop.clone();
     }
 
     /**
@@ -96,8 +112,15 @@ public class TimeSlot implements Comparable<TimeSlot> {
      */
     @Override
     public boolean equals(Object obj) {
-        // TODO implementare
-        return false;
+        if (this == obj){
+            return true;
+        }
+        if (!(obj instanceof TimeSlot)){
+            return false;
+        }
+        TimeSlot other = (TimeSlot) obj;
+
+        return this.start.getTimeInMillis() == other.start.getTimeInMillis() && this.stop.getTimeInMillis() == other.stop.getTimeInMillis();
     }
 
     /**
@@ -112,8 +135,15 @@ public class TimeSlot implements Comparable<TimeSlot> {
      */
     @Override
     public int hashCode() {
-        // TODO implementare
-        return -1;
+        final int prime = 31;
+        int result = 1;
+        long temp;
+
+        temp = start.getTimeInMillis();
+        result = prime * result + Long.hashCode(temp);
+        temp = stop.getTimeInMillis();
+        result = prime * result + Long.hashCode(temp);
+        return result;
     }
 
     /**
@@ -133,8 +163,15 @@ public class TimeSlot implements Comparable<TimeSlot> {
      */
     @Override
     public int compareTo(TimeSlot o) {
-        // TODO implementare
-        return -1;
+        if (o == null){
+            throw new NullPointerException("Tentativo di comparare un timeslot null");
+        }
+
+        int cmp = Long.compare(this.start.getTimeInMillis(), o.start.getTimeInMillis());
+        if (cmp != 0) {
+            return cmp;
+        }
+        return Long.compare(this.stop.getTimeInMillis(), o.stop.getTimeInMillis());
     }
 
     /**
@@ -160,8 +197,37 @@ public class TimeSlot implements Comparable<TimeSlot> {
      *         sovrapposizione supera {@link Integer#MAX_VALUE}
      */
     public int getMinutesOfOverlappingWith(TimeSlot o) {
-        // TODO implementare
-        return -1;
+        if (o == null)
+            throw new NullPointerException(
+                    "Tentativo di calcolare i minuti di sovrapposizione con un time slot nullo");
+
+        /*
+         * L'intersezione di due intervalli [a,b] e [c,d] inizia nel maggiore
+         * dei due estremi iniziali e termina nel minore dei due estremi finali.
+         * Questo evita di distinguere manualmente tutti i possibili casi di
+         * sovrapposizione.
+         */
+        long overlapStart = Math.max(this.start.getTimeInMillis(),
+                o.start.getTimeInMillis());
+        long overlapStop = Math.min(this.stop.getTimeInMillis(),
+                o.stop.getTimeInMillis());
+
+        if (overlapStop <= overlapStart)
+            // Intervalli separati oppure coincidenti soltanto in un estremo.
+            return -1;
+
+        long overlappingMilliseconds = overlapStop - overlapStart;
+        long truncatedOverlappingMinutes = overlappingMilliseconds / 60000;
+
+        /*
+         * La divisione intera tronca secondi e millisecondi residui. Una
+         * sovrapposizione positiva inferiore a un minuto produce quindi 0.
+         */
+        if (truncatedOverlappingMinutes > Integer.MAX_VALUE)
+            throw new IllegalArgumentException(
+                    "Numero di minuti di sovrapposizione troppo grande per un int");
+
+        return (int) truncatedOverlappingMinutes;
     }
 
     /**
@@ -179,8 +245,8 @@ public class TimeSlot implements Comparable<TimeSlot> {
      * @throws NullPointerException se {@code o} è {@code null}
      */
     public boolean overlapsWith(TimeSlot o) {
-        // TODO implementare
-        return false;
+        int minutes = this.getMinutesOfOverlappingWith(o);
+        return minutes > MINUTES_OF_TOLERANCE_FOR_OVERLAPPING;
     }
 
     /**
@@ -200,7 +266,14 @@ public class TimeSlot implements Comparable<TimeSlot> {
      */
     @Override
     public String toString() {
-        // TODO implementare
-        return null;
+        return "[" + start.get(Calendar.DAY_OF_MONTH) + "/"
+                + (start.get(Calendar.MONTH) + 1) + "/"
+                + start.get(Calendar.YEAR) + " "
+                + start.get(Calendar.HOUR_OF_DAY) + "."
+                + start.get(Calendar.MINUTE) + " - "
+                + stop.get(Calendar.DAY_OF_MONTH) + "/"
+                + (stop.get(Calendar.MONTH) + 1) + "/" + stop.get(Calendar.YEAR)
+                + " " + stop.get(Calendar.HOUR_OF_DAY) + "."
+                + stop.get(Calendar.MINUTE) + "]";
     }
 }

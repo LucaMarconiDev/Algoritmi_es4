@@ -1,5 +1,7 @@
 package it.unicam.cs.asdl.es4;
 
+import java.lang.reflect.Array;
+
 /**
  * Modella un'aula identificata univocamente dal nome, dotata di servizi e prenotazioni.
  * <p>La classe mostra come gestire collezioni mediante array a capacità variabile:
@@ -67,9 +69,15 @@ public class Aula implements Comparable<Aula> {
      * @throws NullPointerException se nome o location sono null
      */
     public Aula(String nome, String location) {
-        // TODO implementare
+        if (nome == null)     throw new NullPointerException("Tentativo di costruire un'aula senza nome");
+        if (location == null) throw new NullPointerException("Tentativo di costruire un'aula senza location");
+
         this.nome = nome;
         this.location = location;
+        this.facilities = new Facility[INIT_NUM_FACILITIES];
+        this.numFacilities = 0;
+        this.prenotazioni = new Prenotazione[INIT_NUM_PRENOTAZIONI];
+        this.numPrenotazioni = 0;
 
     }
 
@@ -79,8 +87,9 @@ public class Aula implements Comparable<Aula> {
      */
     @Override
     public int hashCode() {
-        // TODO implementare
-        return -1;
+        final int prime = 31;
+        int result = 1;
+        return result * prime * nome.hashCode();
     }
 
     /**
@@ -91,8 +100,15 @@ public class Aula implements Comparable<Aula> {
      */
     @Override
     public boolean equals(Object obj) {
-        // TODO implementare
-        return false;
+        if (this == obj){
+            return true;
+        }
+
+        if (!(obj instanceof Aula)){
+            return false;
+        }
+        Aula other = (Aula) obj;
+        return this.nome.equals(other.nome);
     }
 
     /**
@@ -103,8 +119,8 @@ public class Aula implements Comparable<Aula> {
      */
     @Override
     public int compareTo(Aula o) {
-        // TODO implementare
-        return -1;
+        if (o == null) throw new NullPointerException("Tentativo di confrontare un'aula con null");
+        return this.nome.compareTo(o.nome);
     }
 
     /**
@@ -175,8 +191,24 @@ public class Aula implements Comparable<Aula> {
          * Nota: attenzione bis! Si noti che per le sottoclassi di Facility non
          * è richiesto di ridefinire ulteriormente il metodo equals...
          */
-        // TODO implementare
-        return false;
+
+        if (f == null) throw new NullPointerException("Tentativo di aggiungere una Facility null");
+
+        // controllo se f esiste in facilities
+        for (int i = 0; i < this.numFacilities; i++) {
+            if (this.facilities[i].equals(f)){
+                return false;
+            }
+        }
+        // se facilities è pieno, raddoppio l'array
+        if (this.facilities.length == this.numFacilities){
+            this.facilities = Aula.espandiArray(this.facilities, facilities.length*2);
+        }
+        // aggiungo la facility
+        this.facilities[this.numFacilities] = f;
+        this.numFacilities++;
+
+        return true;
     }
 
     /**
@@ -187,8 +219,14 @@ public class Aula implements Comparable<Aula> {
      * @throws NullPointerException se ts è null
      */
     public boolean isFree(TimeSlot ts) {
-        // TODO implementare
-        return false;
+        if (ts == null) throw new NullPointerException("Tentativo di verificare la disponibilità con un timeslot null");
+
+        for (int i = 0; i < numPrenotazioni; i++) {
+            if (prenotazioni[i].getTimeSlot().overlapsWith(ts)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -200,8 +238,22 @@ public class Aula implements Comparable<Aula> {
      * @throws NullPointerException se l'array è null
      */
     public boolean satisfiesFacilities(Facility[] requestedFacilities) {
-        // TODO implementare
-        return false;
+        if (requestedFacilities == null) throw new NullPointerException("Tentativo di valutare un'array di facilities null");
+
+        for (int i = 0; i < requestedFacilities.length; i++) {
+            if (requestedFacilities[i] == null) continue; // skippo le facilities null
+            boolean facilitySoddisfatta = false;
+            for (int j = 0; j < numFacilities; j++) {
+                if (facilities[j].satisfies(requestedFacilities[i])) {
+                    facilitySoddisfatta = true;
+                    break;
+                }
+            }
+            if (!facilitySoddisfatta){
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -215,8 +267,41 @@ public class Aula implements Comparable<Aula> {
      * @throws IllegalArgumentException se l'intervallo si sovrappone a una prenotazione
      */
     public void addPrenotazione(TimeSlot ts, String docente, String motivo) {
-        // TODO implementare
+        if (ts == null)      throw new NullPointerException("Tentativo di aggiungere una prenotazione con timeslot null");
+        if (docente == null) throw new NullPointerException("Tentativo di aggiungere una prenotazione con docente null");
+        if (motivo == null)  throw new NullPointerException("Tentativo di aggiungere una prenotazione con motivo null");
+
+        // se prenotazioni è pieno, raddoppio l'array
+        if (this.prenotazioni.length == this.numPrenotazioni){
+            this.prenotazioni = Aula.espandiArray(this.prenotazioni, prenotazioni.length*2);
+        }
+
+        if (!this.isFree(ts)){
+            throw new IllegalArgumentException("Il timeslot si sovrappone a una prenotazione esistente");
+        }
+
+        this.prenotazioni[numPrenotazioni] = new Prenotazione(this, ts, docente, motivo);
+        this.numPrenotazioni++;
     }
 
-    // TODO inserire eventuali metodi privati per questioni di organizzazione
+    /***
+     *
+     * @param arrayOriginale array originale da cui copiare gli elementi nel nuovo array
+     * @param nuovaDimensione dimensione del nuovo array
+     * @return un nuovo array con gli elementi dell'originale e della dimensione desiderata
+     * @param <TipoElemento>
+     */
+    public static <TipoElemento> TipoElemento[] espandiArray(TipoElemento[] arrayOriginale, int nuovaDimensione){
+        if (arrayOriginale == null) throw new IllegalArgumentException("L'array di origine non può essere null");
+        if (nuovaDimensione < arrayOriginale.length) throw new IllegalArgumentException("La nuova dimensione (" + nuovaDimensione +") non può essere inferiore alla dimensione dell'array di origine (" + arrayOriginale.length +")");
+
+        Class<?> tipo = arrayOriginale.getClass().getComponentType();
+        TipoElemento[] nuovoArray = (TipoElemento[]) Array.newInstance(tipo, nuovaDimensione);
+
+        for (int i = 0; i < arrayOriginale.length; i++) {
+            nuovoArray[i] = arrayOriginale[i];
+        }
+
+        return nuovoArray;
+    }
 }
